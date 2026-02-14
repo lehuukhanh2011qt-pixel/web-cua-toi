@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For My Valentine</title>
+    <style>
+        /* CÀI ĐẶT CHUNG */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* --- PHẦN 1: MÀN HÌNH KHÓA --- */
+        #login-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Thay ảnh nền màn hình khóa tại đây */
+            background: url('background.jpg') no-repeat center center/cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: all 1s ease;
+        }
+
+        /* Lớp phủ mờ */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+        }
+
+        .keypad-container {
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            text-align: center;
+            width: 320px;
+        }
+
+        #display {
+            width: 100%;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #fff;
+            font-size: 24px;
+            line-height: 50px;
+            letter-spacing: 5px;
+            text-shadow: 0 0 5px #fff;
+        }
+
+        .keys {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            aspect-ratio: 1;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .btn-enter {
+            grid-column: span 3;
+            border-radius: 15px;
+            background: rgba(255, 105, 180, 0.6);
+            font-weight: bold;
+            aspect-ratio: auto;
+        }
+        
+        .btn-enter:hover {
+            background: rgba(255, 105, 180, 0.9);
+            box-shadow: 0 0 15px #ff69b4;
+        }
+
+        /* Hiệu ứng khi nhập đúng: Phát sáng và tỏa ra */
+        .success-anim {
+            animation: burst 1s forwards;
+        }
+
+        @keyframes burst {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 20px #fff; }
+            50% { transform: scale(1.5); opacity: 0.8; background: rgba(255, 255, 255, 0.8); }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* --- PHẦN 2: TRÁI TIM PARTICLE --- */
+        #main-content {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050505;
+        }
+
+        canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .hint-text {
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255, 192, 203, 0.5);
+            font-size: 14px;
+            pointer-events: none;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 0%, 100% {opacity: 0.3} 50% {opacity: 0.8} }
+
+        /* --- PHẦN 3: BẢNG QUÀ (MODAL) --- */
+        #gift-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Nút mở quà ban đầu */
+        #open-gift-btn {
+            font-size: 50px;
+            cursor: pointer;
+            animation: bounce 1s infinite;
+            background: none;
+            border: none;
+            filter: drop-shadow(0 0 10px red);
+            transition: transform 0.5s;
+        }
+        
+        @keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-20px);} }
+
+        /* Bảng nội dung quà */
+        .gift-card {
+            display: none;
+            width: 80%;
+            max-width: 700px;
+            background: #fff0f5;
+            border-radius: 20px;
+            padding: 20px;
+            border: 5px solid #ff69b4;
+            box-shadow: 0 0 30px #ff1493;
+            position: relative;
+            text-align: center;
+            animation: popUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popUp { from {transform: scale(0);} to {transform: scale(1);} }
+
+        .decor {
+            position: absolute;
+            font-size: 40px;
+        }
+        .top-left { top: -20px; left: -20px; transform: rotate(-30deg); }
+        .top-right { top: -20px; right: -20px; transform: rotate(30deg); }
+
+        .message {
+            font-size: 20px;
+            color: #d63384;
+            font-weight: bold;
+            margin: 20px 0;
+            font-family: 'Pacifico', cursive, sans-serif;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .media-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .media-box {
+            width: 45%;
+            min-width: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 3px dashed #ffb6c1;
+        }
+
+        .media-box img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #ff69b4;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="overlay"></div>
+        <div class="keypad-container" id="keypad">
+            <h3 style="color: white; margin-bottom: 15px;">NHẬP MẬT KHẨU</h3>
+            <div id="display"></div>
+            <div class="keys">
+                <button class="btn" onclick="addNumber('1')">1</button>
+                <button class="btn" onclick="addNumber('2')">2</button>
+                <button class="btn" onclick="addNumber('3')">3</button>
+                <button class="btn" onclick="addNumber('4')">4</button>
+                <button class="btn" onclick="addNumber('5')">5</button>
+                <button class="btn" onclick="addNumber('6')">6</button>
+                <button class="btn" onclick="addNumber('7')">7</button>
+                <button class="btn" onclick="addNumber('8')">8</button>
+                <button class="btn" onclick="addNumber('9')">9</button>
+                <button class="btn" onclick="clearDisplay()">C</button>
+                <button class="btn" onclick="addNumber('0')">0</button>
+                <button class="btn" onclick="backspace()">⌫</button>
+                <button class="btn btn-enter" onclick="checkPassword()">ENTER</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <canvas id="heartCanvas"></canvas>
+        <div class="hint-text">Chạm 1 lần để xem điều kỳ diệu / Chạm 2 lần vào trái tim để mở quà</div>
+    </div>
+
+    <div id="gift-modal">
+        <button id="open-gift-btn">🎁</button>
+
+        <div class="gift-card" id="gift-card">
+            <span class="close-btn" onclick="closeGift()">✖</span>
+            <div class="decor top-left">🎀</div>
+            <div class="decor top-right">🧸</div>
+            
+            <h2 style="color: #ff1493;">Happy Valentine's Day</h2>
+            <div class="message">
+                "Chúc bé yêu có một ngày lễ Valentine vui vẻ, luôn xinh đẹp và luôn yêu anh!"
+            </div>
+
+            <div class="media-container">
+                <div class="media-box">
+                    <img src="anh_trong.jpg" alt="Ảnh kỷ niệm">
+                </div>
+                <div class="media-box">
+                    <img src="dong.gif" alt="Cute Gif">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- LOGIC MÀN HÌNH KHÓA --- */
+        let currentInput = "";
+        const correctPass = "171210";
+        const display = document.getElementById('display');
+        const loginScreen = document.getElementById('login-screen');
+        const keypad = document.getElementById('keypad');
+        const mainContent = document.getElementById('main-content');
+
+        function addNumber(num) {
+            if (currentInput.length < 6) {
+                currentInput += num;
+                updateDisplay();
+            }
+        }
+
+        function clearDisplay() {
+            currentInput = "";
+            updateDisplay();
+        }
+
+        function backspace() {
+            currentInput = currentInput.slice(0, -1);
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            // Hiển thị dấu sao hoặc chấm tròn thay vì số
+            display.innerText = "•".repeat(currentInput.length);
+        }
+
+        function checkPassword() {
+            if (currentInput === correctPass) {
+                // Hiệu ứng phát sáng và tỏa ra
+                keypad.classList.add('success-anim');
+                
+                setTimeout(() => {
+                    loginScreen.style.opacity = '0';
+                    setTimeout(() => {
+                        loginScreen.style.display = 'none';
+                        mainContent.style.display = 'block';
+                        // Bắt đầu canvas loop nhưng chưa vẽ tim ngay
+                        initHeart(); 
+                    }, 1000);
+                }, 800);
+            } else {
+                display.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                setTimeout(() => {
+                    display.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+                    clearDisplay();
+                }, 300);
+            }
+        }
+
+        /* --- LOGIC TRÁI TIM PARTICLE --- */
+        // Sử dụng Canvas thuần để tạo hiệu ứng hạt 3D giả lập
+        let canvas, ctx;
+        let width, height;
+        let particles = [];
+        let isHeartActive = false; // Chỉ hiện khi click lần 1
+
+        function initHeart() {
+            canvas = document.getElementById("heartCanvas");
+            ctx = canvas.getContext("2d");
+            resize();
+            window.addEventListener("resize", resize);
+            loop();
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        // Tạo hình trái tim toán học
+        function pointOnHeart(t) {
+            var x = 16 * Math.pow(Math.sin(t), 3);
+            var y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+            return { x: x, y: y };
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                // Vị trí ngẫu nhiên ban đầu hoặc từ tâm
+                this.x = width / 2;
+                this.y = height / 2;
+                
+                // Chọn điểm đích trên hình trái tim
+                let t = Math.random() * Math.PI * 2;
+                let pos = pointOnHeart(t);
+                // Scale trái tim to ra
+                let scale = Math.min(width, height) / 35; 
+                this.targetX = width / 2 + pos.x * scale;
+                this.targetY = height / 2 + pos.y * scale;
+                
+                // Thêm chút ngẫu nhiên cho độ dày trái tim (tạo cảm giác 3D)
+                let noise = (Math.random() - 0.5) * 40;
+                this.targetX += noise;
+                this.targetY += noise;
+
+                this.velocity = { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 };
+                this.speed = Math.random() * 0.05 + 0.02;
+                this.size = Math.random() * 2 + 0.5;
+                this.color = `hsl(${Math.random() * 60 + 320}, 100%, 60%)`; // Tông hồng/đỏ
+                this.arrived = false;
+            }
+
+            update() {
+                if (!isHeartActive) return;
+
+                // Di chuyển hạt từ từ về đích
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
+
+                // Hiệu ứng rung nhẹ khi đã đến nơi (như nhịp tim)
+                if (Math.abs(this.targetX - this.x) < 1) {
+                    this.x += (Math.random() - 0.5) * 2;
+                    this.y += (Math.random() - 0.5) * 2;
+                }
+            }
+
+            draw() {
+                if (!isHeartActive) return;
+                ctx.beginPath();
+                ctx.fillStyle = this.color;
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function createParticles() {
+            // Tạo 1000 hạt
+            for (let i = 0; i < 1500; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function loop() {
+            // Làm mờ background để tạo vệt (trail effect)
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(loop);
+        }
+
+        // Sự kiện Click 1 lần: Kích hoạt trái tim
+        document.addEventListener('click', (e) => {
+            // Bỏ qua nếu click vào keypad hoặc modal
+            if (e.target.closest('#login-screen') || e.target.closest('#gift-modal')) return;
+
+            if (!isHeartActive) {
+                isHeartActive = true;
+                createParticles();
+            }
+        });
+
+        /* --- LOGIC BẢNG QUÀ (DOUBLE CLICK) --- */
+        const giftModal = document.getElementById('gift-modal');
+        const openGiftBtn = document.getElementById('open-gift-btn');
+        const giftCard = document.getElementById('gift-card');
+
+        document.addEventListener('dblclick', (e) => {
+            // Bỏ qua nếu đang ở màn hình login
+            if (loginScreen.style.display !== 'none') return;
+            
+            // Hiện modal nút quà
+            giftModal.style.display = 'flex';
+            openGiftBtn.style.display = 'block';
+            giftCard.style.display = 'none';
+        });
+
+        // Ấn vào nút hộp quà
+        openGiftBtn.addEventListener('click', () => {
+            openGiftBtn.style.display = 'none';
+            giftCard.style.display = 'block';
+            // Tạo hiệu ứng pháo hoa giấy đơn giản (optional)
+            confettiEffect();
+        });
+
+        function closeGift() {
+            giftModal.style.display = 'none';
+        }
+
+        // Hiệu ứng phụ: Confetti đơn giản khi mở quà
+        function confettiEffect() {
+            // Có thể thêm thư viện confetti nếu muốn, ở đây để đơn giản ta chỉ hiện bảng
+        }
+
+    </script>
+</body>
+</html>
